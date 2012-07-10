@@ -201,12 +201,14 @@ testAsyncMulti("livedata - basic method invocation", [
 ]);
 
 
+
+
 var checkBalances = function (test, a, b) {
   var alice = Ledger.findOne({name: "alice", world: test.runId()});
   var bob = Ledger.findOne({name: "bob", world: test.runId()});
   test.equal(alice.balance, a);
   test.equal(bob.balance, b);
-}
+};
 
 // would be nice to have a database-aware test harness of some kind --
 // this is a big hack (and XXX pollutes the global test namespace)
@@ -217,6 +219,9 @@ testAsyncMulti("livedata - compound methods", [
 
     if (Meteor.is_client)
       Meteor.subscribe("ledger", test.runId(), expect());
+
+    Ledger.insert({name: "alice", balance: 100, world: test.runId()});
+    Ledger.insert({name: "bob", balance: 50, world: test.runId()});
   },
   function (test, expect) {
     Meteor.call('ledger/transfer', test.runId(), "alice", "bob", 10,
