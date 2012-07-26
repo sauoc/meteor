@@ -1,8 +1,5 @@
 (function () {
 
-  // XXX note, only one test can do login/logout things at once! for
-  // now, that is this test.
-
   var username = Meteor.uuid();
   var username2 = Meteor.uuid();
   var username3 = Meteor.uuid();
@@ -20,18 +17,16 @@
 
   testAsyncMulti("passwords - long series", [
     function (test, expect) {
-      // XXX argh quiescence + tests === wtf. and i have no idea why
-      // this was necessary here and not in other places. probably
-      // because it's dependant on how long method call chains are in
-      // other tests
-      var quiesceCallback = expect(function () {
-        test.equal(Meteor.user().username, username);
-      });
       Meteor.createUser({username: username, email: email, password: password},
                         expect(function (error) {
                           test.equal(error, undefined);
-                          Meteor.default_connection.onQuiesce(quiesceCallback);
                         }));
+    },
+    function (test, expect) {
+      Meteor.subscribe('users-for-tests-xcxc', expect(function () {
+        // xcxc why couldn't this be before the first step?
+        test.equal(Meteor.user().username, username);
+      }));
     },
     logoutStep,
     function (test, expect) {

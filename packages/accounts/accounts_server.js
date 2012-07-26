@@ -226,5 +226,10 @@
     };
     Meteor.default_server.publish(null, handler, {is_auto: true});
   });
+
+  Meteor.publish('users-for-tests-xcxc', function() {
+    return Meteor.users.find(
+      {}, {fields: {services: 0, private: 0, emails: 0}});
+  });
 }) ();
 

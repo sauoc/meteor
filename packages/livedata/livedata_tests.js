@@ -307,6 +307,9 @@ testAsyncMulti("livedata - changing userid reruns subscriptions without flapping
       // Contorted since we need to call expect at the top level of a test
       // (see comment at top of async_multi.js)
 
+      // xcxc get rid of all of these onQuiesce, and try to split this into several
+      // steps
+
       var sendFirstSetUserId = expect(function() {
         Meteor.apply("setUserId", [1], {wait: true});
         Meteor.default_connection.onQuiesce(afterFirstSetUserId);

@@ -7,18 +7,22 @@
     var collection = new Meteor.Collection(name);
     Meteor.Collection.insecure = oldInsecure;
 
+    // xcxc why does this need to be also defined on client?
+    var m = {};
+    m["clear-collection-" + name] = function(runId) {
+      collection.remove({world: runId});
+    };
+    Meteor.methods(m);
+
     if (Meteor.is_server) {
       Meteor.publish("collection-" + name, function() {
         return collection.find();
       });
 
-      var m = {};
-      m["clear-collection-" + name] = function(runId) {
-        collection.remove({world: runId});
-      };
-      Meteor.methods(m);
     } else {
-      Meteor.subscribe("collection-" + name);
+      collection.subscribe = function(callback) {
+        Meteor.subscribe("collection-" + name, callback);
+      };
     }
 
     collection.callClearMethod = function (runId, callback) {
@@ -158,6 +162,9 @@
     // restricted, and that other mutations aren't allowed
     testAsyncMulti("collection - partial allow", [
       function (test, expect) {
+        restrictedCollectionForPartialAllowTest.subscribe(expect());
+      },
+      function (test, expect) {
         restrictedCollectionForPartialAllowTest.update(
           {world: test.runId()}, {$set: {updated: true}}, expect(function (err, res) {
             test.equal(err.error, 403);
@@ -168,10 +175,14 @@
     // test that we only fetch the fields specified
     testAsyncMulti("collection - fetch", [
       function (test, expect) {
+        restrictedCollectionForFetchTest.subscribe(expect());
+        restrictedCollectionForFetchAllTest.subscribe(expect());
+      },
+      function (test, expect) {
         restrictedCollectionForFetchTest.insert(
-          {field1: 1, field2: 1, field3: 1, world: test.runId()});
+          {field1: 1, field2: 1, field3: 1, world: test.runId()}, expect(function() {}));
         restrictedCollectionForFetchAllTest.insert(
-          {field1: 1, field2: 1, field3: 1, world: test.runId()});
+          {field1: 1, field2: 1, field3: 1, world: test.runId()}, expect(function() {}));
 
       }, function (test, expect) {
         restrictedCollectionForFetchTest.update(
@@ -203,6 +214,9 @@
   if (Meteor.is_client) {
     testAsyncMulti("collection - insecure", [
       function (test, expect) {
+        insecureCollection.subscribe(expect());
+      },
+      function (test, expect) {
         insecureCollection.callClearMethod(test.runId(), expect(function () {
           test.equal(lockedDownCollection.find({world: test.runId()}).count(), 0);
         }));
@@ -219,6 +233,9 @@
 
     testAsyncMulti("collection - locked down", [
       function (test, expect) {
+        lockedDownCollection.subscribe(expect());
+      },
+      function (test, expect) {
         lockedDownCollection.callClearMethod(test.runId(), expect(function() {
           test.equal(lockedDownCollection.find({world: test.runId()}).count(), 0);
         }));
@@ -226,8 +243,6 @@
       function (test, expect) {
         lockedDownCollection.insert({world: test.runId(), foo: 'bar'}, expect(function (err, res) {
           test.equal(err.error, 403);
-        }));
-        Meteor.default_connection.onQuiesce(expect(function () {
           test.equal(lockedDownCollection.find({world: test.runId()}).count(), 0);
         }));
       }
@@ -236,18 +251,20 @@
     (function () {
       var collection = restrictedCollectionForUpdateOptionsTest;
       testAsyncMulti("collection - update options", [
+        function (test, expect) {
+          collection.subscribe(expect());
+        },
         // init
         function (test, expect) {
-          collection.callClearMethod(test.runId());
-          Meteor.default_connection.onQuiesce(expect(function () {
+          collection.callClearMethod(test.runId(), expect(function () {
             test.equal(collection.find({world: test.runId()}).count(), 0);
           }));
         },
         // put a few objects
         function (test, expect) {
           var doc = {canInsert: true, canUpdate: true, canModify: true, world: test.runId()};
-          collection.insert(doc);
-          collection.insert(doc);
+          collection.insert(doc, expect(function() {}));
+          collection.insert(doc, expect(function() {}));
           collection.insert(doc, expect(function (err, res) {
             test.isFalse(err);
             test.equal(collection.find({world: test.runId()}).count(), 3);
@@ -274,15 +291,17 @@
         }
       ]);
     }) ();
-    
+
     _.each(
       [restrictedCollectionDefaultInsecure, restrictedCollectionDefaultSecure],
       function(collection) {
         testAsyncMulti("collection - " + collection._name, [
+          function (test, expect) {
+            collection.subscribe(expect());
+          },
           // init
           function (test, expect) {
-            collection.callClearMethod(test.runId());
-            Meteor.default_connection.onQuiesce(expect(function () {
+            collection.callClearMethod(test.runId(), expect(function() {
               test.equal(collection.find({world: test.runId()}).count(), 0);
             }));
           },
@@ -451,8 +470,6 @@
             collection.callClearMethod(test.runId(), expect(function (err, res) {
               test.isFalse(err);
               // successfully removed
-            }));
-            Meteor.default_connection.onQuiesce(expect(function () {
               test.equal(collection.find({world: test.runId()}).count(), 0);
             }));
           }
