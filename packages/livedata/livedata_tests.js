@@ -276,93 +276,74 @@ var eavesdropOnCollection = function(livedata_connection,
   };
 };
 
-testAsyncMulti("livedata - changing userid reruns subscriptions without flapping data on the wire", [
-  function(test, expect) {
-    if (Meteor.is_client) {
-      var messages = [];
-      var undoEavesdrop = eavesdropOnCollection(
-        Meteor.default_connection, "objectsWithUsers", messages);
+if (Meteor.is_client) {
+  (function() {
+    var undoEavesDrop;
+    var messages = [];
 
-      // A helper for testing incoming set and unset messages
-      // XXX should this be extracted as a general helper together with
-      // eavesdropOnCollection?
-      var testSetAndUnset = function(expectation) {
-        test.equal(_.map(messages, function(msg) {
-          var result = {};
-          if (msg.set)
-            result.set = msg.set.name;
-          if (msg.unset)
-            result.unset = true;
-          return result;
-        }), expectation);
-        messages.length = 0; // clear messages without creating a new object
-      };
+    // A helper for testing incoming set and unset messages
+    // XXX should this be extracted as a general helper together with
+    // eavesdropOnCollection?
+    var testSetAndUnset = function(test, expectation) {
+      test.equal(_.map(messages, function(msg) {
+        var result = {};
+        if (msg.set)
+          result.set = msg.set.name;
+        if (msg.unset)
+          result.unset = true;
+        return result;
+      }), expectation);
+      messages.length = 0; // clear messages without creating a new object
+    };
 
-      Meteor.subscribe("objectsWithUsers", expect(function() {
-        testSetAndUnset([{set: "owned by none"}]);
-        test.equal(objectsWithUsers.find().count(), 1);
-        Meteor.defer(sendFirstSetUserId);
-      }));
+    testAsyncMulti("livedata - changing userid reruns subscriptions without flapping data on the wire", [
+      function(test, expect) {
+        undoEavesdrop = eavesdropOnCollection(
+          Meteor.default_connection, "objectsWithUsers", messages);
 
-      // Contorted since we need to call expect at the top level of a test
-      // (see comment at top of async_multi.js)
-
-      // xcxc get rid of all of these onQuiesce, and try to split this into several
-      // steps
-
-      var sendFirstSetUserId = expect(function() {
-        Meteor.apply("setUserId", [1], {wait: true});
-        Meteor.default_connection.onQuiesce(afterFirstSetUserId);
-      });
-
-      var afterFirstSetUserId = expect(function() {
-        testSetAndUnset([
-          {unset: true},
-          {set: "owned by one - a"},
-          {set: "owned by one/two - a"},
-          {set: "owned by one/two - b"}]);
-        test.equal(objectsWithUsers.find().count(), 3);
-        Meteor.defer(sendSecondSetUserId);
-      });
-
-      var sendSecondSetUserId = expect(function() {
-        Meteor.apply("setUserId", [2], {wait: true});
-        Meteor.default_connection.onQuiesce(afterSecondSetUserId);
-      });
-
-      var afterSecondSetUserId = expect(function() {
-        testSetAndUnset([
-          {unset: true},
-          {set: "owned by two - a"},
-          {set: "owned by two - b"}]);
-        test.equal(objectsWithUsers.find().count(), 4);
-        Meteor.defer(sendThirdSetUserId);
-      });
-
-      var sendThirdSetUserId = expect(function() {
-        Meteor.apply("setUserId", [2], {wait: true});
-        Meteor.default_connection.onQuiesce(afterThirdSetUserId);
-      });
-
-      var afterThirdSetUserId = expect(function() {
-        // Nothing should have been sent since the results of the
-        // query are the same ("don't flap data on the wire")
-        testSetAndUnset([]);
-        test.equal(objectsWithUsers.find().count(), 4);
-        undoEavesdrop();
-      });
-    }
-  }, function(test, expect) {
-    if (Meteor.is_client) {
-      Meteor.subscribe("recordUserIdOnStop");
-      Meteor.apply("setUserId", [100], {wait: true}, expect(function() {}));
-      Meteor.apply("setUserId", [101], {wait: true}, expect(function() {}));
-      Meteor.call("userIdWhenStopped", expect(function(err, result) {
-        test.equal(result, 100);
-      }));
-    }
-  }
-]);
+        Meteor.subscribe("objectsWithUsers", expect(function() {
+          testSetAndUnset(test, [{set: "owned by none"}]);
+          test.equal(objectsWithUsers.find().count(), 1);
+        }));
+      },
+      function(test, expect) {
+        Meteor.apply("setUserId", [1], {wait: true}, expect(function() {
+          testSetAndUnset(test, [
+            {unset: true},
+            {set: "owned by one - a"},
+            {set: "owned by one/two - a"},
+            {set: "owned by one/two - b"}]);
+          test.equal(objectsWithUsers.find().count(), 3);
+        }));
+      },
+      function(test, expect) {
+        Meteor.apply("setUserId", [2], {wait: true}, expect(function() {
+          testSetAndUnset(test, [
+            {unset: true},
+            {set: "owned by two - a"},
+            {set: "owned by two - b"}]);
+          test.equal(objectsWithUsers.find().count(), 4);
+        }));
+      },
+      function(test, expect) {
+        Meteor.apply("setUserId", [2], {wait: true}, expect(function() {
+          // Nothing should have been sent since the results of the
+          // query are the same ("don't flap data on the wire")
+          testSetAndUnset(test, []);
+          test.equal(objectsWithUsers.find().count(), 4);
+          undoEavesdrop();
+        }));
+      }, function(test, expect) {
+        Meteor.subscribe("recordUserIdOnStop");
+        Meteor.apply("setUserId", [100], {wait: true}, expect(function() {}));
+        Meteor.apply("setUserId", [101], {wait: true}, expect(function() {}));
+        Meteor.call("userIdWhenStopped", expect(function(err, result) {
+          test.equal(result, 100);
+        }));
+      }
+    ]);
+  }) ();
+};
 
 Tinytest.add("livedata - setUserId fails when called from server", function(test) {
   if (Meteor.is_server) {

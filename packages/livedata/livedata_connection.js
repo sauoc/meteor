@@ -449,10 +449,12 @@ _.extend(Meteor._LivedataConnection.prototype, {
   _userIdListeners: {}, // context.id -> context
 
   // PRIVATE: called when we are up-to-date with the server. intended
-  // for use only in tests. currently, you are very limited in what
-  // you may do inside your callback -- in particular, don't do
-  // anything that could result in another call to onQuiesce, or
-  // results are undefined.
+  // for use only in tests, and even that should generally not be
+  // necessary unless you are explicitly testing
+  // quiescense. currently, you are very limited in what you may do
+  // inside your callback -- in particular, don't do anything that
+  // could result in another call to onQuiesce, or results are
+  // undefined.
   onQuiesce: function (f) {
     var self = this;
 

@@ -7,17 +7,17 @@
     var collection = new Meteor.Collection(name);
     Meteor.Collection.insecure = oldInsecure;
 
-    // xcxc why does this need to be also defined on client?
-    var m = {};
-    m["clear-collection-" + name] = function(runId) {
-      collection.remove({world: runId});
-    };
-    Meteor.methods(m);
-
     if (Meteor.is_server) {
       Meteor.publish("collection-" + name, function() {
         return collection.find();
       });
+
+      // xcxc why does this need to be also defined on client?
+      var m = {};
+      m["clear-collection-" + name] = function(runId) {
+        collection.remove({world: runId});
+      };
+      Meteor.methods(m);
 
     } else {
       collection.subscribe = function(callback) {

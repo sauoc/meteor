@@ -114,6 +114,7 @@ var testAsyncMulti = function (name, funcs) {
   var timeout = 180000;
 
   Tinytest.addAsync(name, function (test, onComplete) {
+    console.log('xcxc running', name);
     var remaining = _.clone(funcs);
 
     var runNext = function () {

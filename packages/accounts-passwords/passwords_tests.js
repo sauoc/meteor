@@ -17,16 +17,16 @@
 
   testAsyncMulti("passwords - long series", [
     function (test, expect) {
+      //xcxc
+//      Meteor.default_connection.onQuiesce(expect());
+//      Meteor.subscribe('users-for-tests', expect());
+    },
+    function (test, expect) {
       Meteor.createUser({username: username, email: email, password: password},
                         expect(function (error) {
                           test.equal(error, undefined);
+                          test.equal(Meteor.user().username, username);
                         }));
-    },
-    function (test, expect) {
-      Meteor.subscribe('users-for-tests-xcxc', expect(function () {
-        // xcxc why couldn't this be before the first step?
-        test.equal(Meteor.user().username, username);
-      }));
     },
     logoutStep,
     function (test, expect) {
