@@ -25,11 +25,11 @@ Meteor._runTestsEverywhere = function (onReport, onComplete) {
       throw new Error("Test server returned an error");
   });
 
-  Meteor.default_connection.onQuiesce(function () {
+//  Meteor.default_connection.onQuiesce(function () {
     // XXX use _.defer to avoid calling into minimongo
     // reentrantly. we need to handle this better..
     // (XXX code got refactored -- still necessary?)
-    _.defer(function () {
+//    _.defer(function () {
       // XXX this is a really sloppy way to GC the test results
 
       // XXX huge mess. have to use onQuiesce (supposed to be
@@ -43,8 +43,8 @@ Meteor._runTestsEverywhere = function (onReport, onComplete) {
       // until we have actually received the test results :)
       remote_complete = true;
       maybeDone();
-    });
-  });
+//    });
+//  });
 
   var sub_handle = Meteor.subscribe('tinytest/results', run_id);
   var query_handle = Meteor._ServerTestResults.find().observe({
