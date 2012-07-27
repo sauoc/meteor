@@ -233,6 +233,7 @@ _.extend(TestCase.prototype, {
 
     var completed = false;
     var markComplete = function () {
+      console.log('xcxc complete', self.name);
       if (completed) {
         Meteor._debug("*** Test error -- test '" + self.name +
                       "' returned multiple times.");
@@ -248,7 +249,9 @@ _.extend(TestCase.prototype, {
                                           onException(e);
                                       }, stop_at_offset);
 
-    Tinytest.defer(function () {
+    console.log('xcxc run', self.name);
+//xcxc is this needed?
+//    Tinytest.defer(function () {
       try {
         if (self.async) {
           self.func(results, function () {
@@ -264,7 +267,7 @@ _.extend(TestCase.prototype, {
         if (markComplete())
           onException(e);
       }
-    });
+//    });
   }
 });
 
@@ -353,6 +356,8 @@ _.extend(TestRun.prototype, {
                 function(t) {
                   if (Meteor.is_server)
                     return "SERVER";
+                  else
+                    return "xcxcCLIENT";
                   if (t.async)
                     return "ASYNC";
                   return t.name.split(" - ")[0];

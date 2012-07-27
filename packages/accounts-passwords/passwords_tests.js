@@ -17,9 +17,7 @@
 
   testAsyncMulti("passwords - long series", [
     function (test, expect) {
-      //xcxc
-//      Meteor.default_connection.onQuiesce(expect());
-//      Meteor.subscribe('users-for-tests', expect());
+      Meteor.subscribe('users-for-tests', expect());
     },
     function (test, expect) {
       Meteor.createUser({username: username, email: email, password: password},
