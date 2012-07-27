@@ -448,29 +448,6 @@ _.extend(Meteor._LivedataConnection.prototype, {
   _userId: null,
   _userIdListeners: {}, // context.id -> context
 
-  // PRIVATE: called when we are up-to-date with the server. intended
-  // for use only in tests, and even that should generally not be
-  // necessary unless you are explicitly testing
-  // quiescense. currently, you are very limited in what you may do
-  // inside your callback -- in particular, don't do anything that
-  // could result in another call to onQuiesce, or results are
-  // undefined.
-  onQuiesce: function (f) {
-    var self = this;
-
-    f = Meteor.bindEnvironment(f, function (e) {
-      Meteor._debug("Exception in quiesce callback", e.stack);
-    });
-
-    for (var method_id in self.unsatisfied_methods) {
-      // we are not quiesced -- wait until we are
-      self.quiesce_callbacks.push(f);
-      return;
-    }
-
-    f();
-  },
-
   _livedata_connected: function (msg) {
     var self = this;
 
