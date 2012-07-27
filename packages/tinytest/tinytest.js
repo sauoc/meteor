@@ -354,6 +354,7 @@ _.extend(TestRun.prototype, {
     var testGroups = _.values(
       _.groupBy(self.manager.ordered_tests,
                 function(t) {
+                  return 'xcxc';
                   if (Meteor.is_server)
                     return "SERVER";
                   else

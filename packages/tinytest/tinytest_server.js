@@ -2,6 +2,7 @@ Meteor.startup(function () {
   Meteor._ServerTestResults.remove();
 });
 
+// xcxc consider passing results on a separate connection?
 Meteor.publish('tinytest/results', function (run_id) {
   return Meteor._ServerTestResults.find({run_id: run_id},
                                         {key: {collection: 'tinytest_results',
